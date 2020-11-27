@@ -197,6 +197,7 @@ class ClassifierNetwork(nn.Module):
 
         dense_rep = self.fc(concate)
         predicted = self.cls(dense_rep)
+        # predicted = dense_rep
 
         return predicted
     

@@ -93,32 +93,48 @@ def train_epoch(model, opt, criterion, batch_size=1):
         # mask the output
         label_predicted = label_predicted.view(-1)[:int(sum(train_mask[i]))]
         label_batch = label_batch.view(-1)[:int(sum(train_mask[i]))]
-        loss = criterion(label_batch, label_predicted)
+
+        loss = criterion(label_predicted,label_batch)
 
         loss.backward()
         opt.step()
         losses += loss.data.numpy()
     # print(label_pred)
-    return losses
+    return losses/a_train.shape[0], label_predicted, label_batch
 
-def evaluate(model, criterion, batch_size=1):
+def evaluate(model, criterion, data_a, data_t, data_v,label,mask, batch_size=1):
     model.eval()
     losses = 0
-    for i in range(a_test.shape[0]):
-        a_batch = a_test[i:i+batch_size]
-        t_batch = t_test[i:i+batch_size]
-        v_batch = v_test[i:i+batch_size]
-        label_batch = test_label[i:i+batch_size]
-        mask_batch = test_mask[i:i+batch_size]
+    label_pred = []
+    label_original = []
+    for i in range(data_a.shape[0]):
+        a_batch = data_a[i:i+batch_size]
+        t_batch = data_t[i:i+batch_size]
+        v_batch = data_v[i:i+batch_size]
+        label_batch = label[i:i+batch_size]
+        mask_batch = mask[i:i+batch_size]
     
         label_predicted = model(t_batch, a_batch, v_batch, mask_batch)
-        label_predicted = label_predicted.view(-1)[:int(sum(test_mask[i]))]
-        label_batch = label_batch.view(-1)[:int(sum(test_mask[i]))]
-        loss = criterion(label_batch, label_predicted)
+        label_predicted = label_predicted.view(-1)[:int(sum(mask[i]))]
+        label_batch = label_batch.view(-1)[:int(sum(mask[i]))]
+        label_pred.append(label_predicted)
+        label_original.append(label_batch)
+        loss = criterion(label_predicted,label_batch)
         losses += loss.data.numpy()
-    return losses
+    return losses/a_test.shape[0], label_pred, label_original
 
+def binary_acc(y_pred, y_test):
+    acc= 0.0
+    for i in range(len(y_pred)):
 
+        # y_pred_tag = torch.round(torch.sigmoid(y_pred[i]))
+        y_pred_tag = torch.round(y_pred[i])
+
+        correct_results_sum = (y_pred_tag == y_test[i]).sum().float()
+        acc2 = correct_results_sum/y_test[i].shape[0]
+        acc += acc2.data.numpy()
+    
+    return acc/len(y_pred)
 if __name__ == "__main__":
 
     parser = ArgumentParser()
@@ -133,7 +149,7 @@ if __name__ == "__main__":
     parser.add_argument('--drop_rate', type=int, default=0.2, help='drop out rate of the model')
     parser.add_argument('--attention_heads', type=int, default=4, help='the number of attention heads in multi-head attention')
     parser.add_argument('--transformer_layers', type=int, default=1, help='the number of transformer layers stacked together')
-    parser.add_argument('--learning_rate', type=float, default=0.0005, help='learning rate when training the model')
+    parser.add_argument('--learning_rate', type=float, default=0.001, help='learning rate when training the model')
 
     cfgs = parser.parse_args()
     print(cfgs)
@@ -147,26 +163,32 @@ if __name__ == "__main__":
     # Model Construction
     model = ClassifierNetwork(cfgs)
 
-    opt = optim.Adam(model.parameters(), lr=cfgs.learning_rate, betas=(0.9, 0.999))
+    opt = optim.Adam(model.parameters(), lr=cfgs.learning_rate)
 
-    criterion = nn.BCEWithLogitsLoss()
+    criterion = nn.BCEWithLogitsLoss(reduction="mean")
 
     # train the model
     e_losses = []
     num_epochs = 20
+    print("Training......")
     for e in range(num_epochs):
-        epoch_loss = train_epoch(model, opt, criterion)
+        epoch_loss,label_predicted,label_batch = train_epoch(model, opt, criterion)
         print("epoch ", e)
         print("loss " , epoch_loss)
+        train_loss, label_pred, label_original = evaluate(model, criterion,a_train, t_train, v_train,train_label,train_mask)
+        print("Train accuracy ", binary_acc(label_pred,label_original))
         e_losses.append(epoch_loss)
-    print(e_losses)
+    #print(e_losses)
+
+    # validate model on test set
+    test_loss, label_pred, label_original = evaluate(model, criterion,a_test, t_test, v_test,test_label,test_mask)
+    print(test_loss)
+    #print(label_pred)
+    print("*************")
+    #print(label_original)
+    print("Test accuracy ", binary_acc(label_pred,label_original))
 
     plt.plot(e_losses)
     plt.xlabel("Epoch")
     plt.ylabel("Training Loss")
     plt.show()
-
-    # validate model on test set
-    test_loss = evaluate(model, criterion)
-    print(test_loss)
-
