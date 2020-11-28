@@ -4,6 +4,7 @@ from torch.autograd import Variable
 import torch.optim as optim
 from argparse import ArgumentParser
 import numpy as np
+import csv
 
 import matplotlib.pyplot as plt
 
@@ -146,7 +147,7 @@ if __name__ == "__main__":
     parser.add_argument('--audio_dim', type=int, default=73, help='audio feature dimension of the data')
     parser.add_argument('--video_dim', type=int, default=100, help='video feature dimension of the data')
     parser.add_argument('--text_dim', type=int, default=100, help='text feature dimension of the data')
-    parser.add_argument('--drop_rate', type=int, default=0.2, help='drop out rate of the model')
+    parser.add_argument('--drop_rate', type=int, default=0.5, help='drop out rate of the model')
     parser.add_argument('--attention_heads', type=int, default=4, help='the number of attention heads in multi-head attention')
     parser.add_argument('--transformer_layers', type=int, default=1, help='the number of transformer layers stacked together')
     parser.add_argument('--learning_rate', type=float, default=0.001, help='learning rate when training the model')
@@ -176,7 +177,8 @@ if __name__ == "__main__":
         print("epoch ", e)
         print("loss " , epoch_loss)
         train_loss, label_pred, label_original = evaluate(model, criterion,a_train, t_train, v_train,train_label,train_mask)
-        print("Train accuracy ", binary_acc(label_pred,label_original))
+        train_acc = binary_acc(label_pred,label_original)
+        print("Train accuracy ", train_acc)
         e_losses.append(epoch_loss)
     #print(e_losses)
 
@@ -186,9 +188,18 @@ if __name__ == "__main__":
     #print(label_pred)
     print("*************")
     #print(label_original)
-    print("Test accuracy ", binary_acc(label_pred,label_original))
+    test_acc = binary_acc(label_pred,label_original)
+    print("Test accuracy ", test_acc)
+    
+    # append the results to a csv file
+    with open('results.csv', 'a') as f:
+        writer = csv.writer(f)
+        # writer.writerow({"configs: ": str(cfgs), "train_acc: ": str(train_acc), "test_acc": str(test_acc)})
+        writer.writerow([str(cfgs), str(train_acc), str(test_acc)])
 
     plt.plot(e_losses)
     plt.xlabel("Epoch")
     plt.ylabel("Training Loss")
-    plt.show()
+    plt.savefig('./figures/'+cfgs.text_encoder+'_'+cfgs.video_encoder+'_'+cfgs.audio_encoder)
+    # plt.show()
+
