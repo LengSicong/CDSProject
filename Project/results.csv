@@ -1,3 +1,4 @@
+configuration, training accuracy, test accuracy
 "Namespace(attention_heads=4, audio_dim=73, audio_encoder='lstm', drop_rate=0.5, hidden_dim=128, learning_rate=0.001, text_dim=100, text_encoder='lstm', transformer_layers=1, video_dim=100, video_encoder='lstm')",0.9973535133946326,0.7463130393335896
 "Namespace(attention_heads=4, audio_dim=73, audio_encoder='cnn_rnn', drop_rate=0.5, hidden_dim=128, learning_rate=0.001, text_dim=100, text_encoder='lstm', transformer_layers=1, video_dim=100, video_encoder='lstm')",0.9986308120912121,0.7292245164994271
 "Namespace(attention_heads=4, audio_dim=73, audio_encoder='transformer', drop_rate=0.5, hidden_dim=128, learning_rate=0.001, text_dim=100, text_encoder='lstm', transformer_layers=1, video_dim=100, video_encoder='lstm')",0.9925733170201702,0.6769053272662624
