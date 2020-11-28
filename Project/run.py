@@ -195,7 +195,7 @@ if __name__ == "__main__":
     with open('results.csv', 'a') as f:
         writer = csv.writer(f)
         # writer.writerow({"configs: ": str(cfgs), "train_acc: ": str(train_acc), "test_acc": str(test_acc)})
-        writer.writerow([str(cfgs), str(train_acc), str(test_acc)])
+        writer.writerow([str(cfgs.text_encoder), str(cfgs.video_encoder), str(cfgs.audio_encoder), str(train_acc), str(test_acc)])
 
     plt.plot(e_losses)
     plt.xlabel("Epoch")
