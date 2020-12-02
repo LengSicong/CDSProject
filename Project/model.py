@@ -196,10 +196,10 @@ class ClassifierNetwork(nn.Module):
         concate = torch.cat((text_feat, audio_feat, video_feat), 2)
 
         dense_rep = self.fc(concate)
-        predicted = self.cls(dense_rep)
-        # predicted = dense_rep
+        # predicted = self.cls(dense_rep)
+        predicted = dense_rep
 
-        return predicted
+        return dense_rep
     
     def transformer_input(self, query_features, q_mask, encoder):
         query_features = query_features.transpose(0,1)

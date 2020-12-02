@@ -128,14 +128,35 @@ def binary_acc(y_pred, y_test):
     acc= 0.0
     for i in range(len(y_pred)):
 
-        # y_pred_tag = torch.round(torch.sigmoid(y_pred[i]))
-        y_pred_tag = torch.round(y_pred[i])
+        y_pred_tag = torch.round(torch.sigmoid(y_pred[i]))
+        # y_pred_tag = torch.round(y_pred[i])
 
         correct_results_sum = (y_pred_tag == y_test[i]).sum().float()
         acc2 = correct_results_sum/y_test[i].shape[0]
         acc += acc2.data.numpy()
     
     return acc/len(y_pred)
+
+def f1_score(y_pred, y_test):
+    tp = 0
+    tn = 0
+    fp = 0
+    fn = 0
+
+    for i in range(len(y_pred)):
+        y_pred_tag = torch.round(torch.sigmoid(y_pred[i]))
+        tp += ((y_pred_tag == y_test[i]) & (y_test[i] == 1.0)).sum().float()
+        tn += ((y_pred_tag == y_test[i]) & (y_test[i] == 0.0)).sum().float()
+        fp += ((y_pred_tag != y_test[i]) & (y_test[i] == 1.0)).sum().float()
+        fn += ((y_pred_tag != y_test[i]) & (y_test[i] == 0.0)).sum().float()
+    
+    precision = tp / (tp + fp)
+    recall = tp / (tp + fn)
+    
+    f1 = 2 * (precision * recall) / (precision + recall)
+    return f1.item()
+
+
 if __name__ == "__main__":
 
     parser = ArgumentParser()
@@ -178,7 +199,9 @@ if __name__ == "__main__":
         print("loss " , epoch_loss)
         train_loss, label_pred, label_original = evaluate(model, criterion,a_train, t_train, v_train,train_label,train_mask)
         train_acc = binary_acc(label_pred,label_original)
+        train_f1 = f1_score(label_pred, label_original)
         print("Train accuracy ", train_acc)
+        print("Train F1 ", train_f1)
         e_losses.append(epoch_loss)
     #print(e_losses)
 
@@ -189,13 +212,15 @@ if __name__ == "__main__":
     print("*************")
     #print(label_original)
     test_acc = binary_acc(label_pred,label_original)
+    test_f1 = f1_score(label_pred, label_original)
     print("Test accuracy ", test_acc)
+    print("Test f1 ", test_f1)
     
     # append the results to a csv file
-    with open('results.csv', 'a') as f:
+    with open('results3.csv', 'a') as f:
         writer = csv.writer(f)
         # writer.writerow({"configs: ": str(cfgs), "train_acc: ": str(train_acc), "test_acc": str(test_acc)})
-        writer.writerow([str(cfgs.text_encoder), str(cfgs.video_encoder), str(cfgs.audio_encoder), str(train_acc), str(test_acc)])
+        writer.writerow([str(cfgs.text_encoder), str(cfgs.video_encoder), str(cfgs.audio_encoder), str(train_acc), str(train_f1), str(test_acc), str(test_f1)])
 
     plt.plot(e_losses)
     plt.xlabel("Epoch")
