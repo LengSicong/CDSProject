@@ -70,7 +70,7 @@ def process_data(audio_data, text_data, video_data):
 
     return a_train, v_train, t_train, a_test, t_test, v_test, train_label, test_label, train_mask, test_mask
 
-def train_epoch(model, opt, criterion, batch_size=1):
+def train_epoch(model, opt, criterion, batch_size=3):
     model.train()
     losses = 0
     label_pred = []
@@ -164,7 +164,7 @@ if __name__ == "__main__":
     parser.add_argument('--text_encoder', type=str, default='lstm', help='[lstm, cnn_rnn, transformer, cnn]')
     parser.add_argument('--audio_encoder', type=str, default='lstm', help='[lstm, cnn_rnn, transformer, cnn]')
     parser.add_argument('--video_encoder', type=str, default='lstm', help='[lstm, cnn_rnn, transformer, cnn]')
-    parser.add_argument('--hidden_dim', type=int, default=128, help='hidden size of the model')
+    parser.add_argument('--hidden_dim', type=int, default=64, help='hidden size of the model')
     parser.add_argument('--audio_dim', type=int, default=73, help='audio feature dimension of the data')
     parser.add_argument('--video_dim', type=int, default=100, help='video feature dimension of the data')
     parser.add_argument('--text_dim', type=int, default=100, help='text feature dimension of the data')
@@ -188,6 +188,11 @@ if __name__ == "__main__":
     opt = optim.Adam(model.parameters(), lr=cfgs.learning_rate)
 
     criterion = nn.BCEWithLogitsLoss(reduction="mean")
+
+    # count parameters
+    def count_parameters(model):
+        return sum(p.numel() for p in model.parameters() if p.requires_grad)
+    print('The model has ' + str(count_parameters(model)) + ' trainable parameters')
 
     # train the model
     e_losses = []
@@ -217,14 +222,14 @@ if __name__ == "__main__":
     print("Test f1 ", test_f1)
     
     # append the results to a csv file
-    with open('results3.csv', 'a') as f:
-        writer = csv.writer(f)
-        # writer.writerow({"configs: ": str(cfgs), "train_acc: ": str(train_acc), "test_acc": str(test_acc)})
-        writer.writerow([str(cfgs.text_encoder), str(cfgs.video_encoder), str(cfgs.audio_encoder), str(train_acc), str(train_f1), str(test_acc), str(test_f1)])
+    # with open('results3.csv', 'a') as f:
+    #     writer = csv.writer(f)
+    #     # writer.writerow({"configs: ": str(cfgs), "train_acc: ": str(train_acc), "test_acc": str(test_acc)})
+    #     writer.writerow([str(cfgs.text_encoder), str(cfgs.video_encoder), str(cfgs.audio_encoder), str(train_acc), str(train_f1), str(test_acc), str(test_f1)])
 
     plt.plot(e_losses)
     plt.xlabel("Epoch")
     plt.ylabel("Training Loss")
-    plt.savefig('./figures/'+cfgs.text_encoder+'_'+cfgs.video_encoder+'_'+cfgs.audio_encoder)
-    # plt.show()
+    # plt.savefig('./figures/'+cfgs.text_encoder+'_'+cfgs.video_encoder+'_'+cfgs.audio_encoder)
+    plt.show()
 
